@@ -5,6 +5,8 @@ import openai
 import telebot
 from loguru import logger
 
+from src import AskChatGPT
+
 dotenv.load_dotenv()
 
 bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'))
@@ -21,29 +23,16 @@ def send_welcome(message):
 def ask_openai(message):
     logger.info(message.__dict__["json"])
 
-    ask = message.text.replace('/ask ', '')
-
     bot.reply_to(message, 'Aguarde um momento...')
 
     try:
-        response = openai.Completion.create(
-            engine="text-davinci-002",
-            prompt=ask,
-            max_tokens=1024,
-            n=1,
-            stop=None,
-            temperature=0.5
-        )
-
+        ask_gtp = AskChatGPT(message.text)
+        answer = ask_gtp.get_response_int_chat_gpt()
     except Exception as e:
         logger.error(e)
-        bot.reply_to(message, 'Desculpe... Houve um erro ao tentar processar sua pergunta.')
+        answer = 'Desculpe... Houve um erro ao tentar processar sua pergunta.'
 
-    else:
-        answer: str = response['choices'][0]['text'].replace('\n', ' ')
-
-        logger.info("Question: {ask} - Answer: {text}".format(ask=ask, text=answer))
-        bot.reply_to(message, answer)
+    bot.reply_to(message, answer)
 
 
 logger.info('Bot started')
